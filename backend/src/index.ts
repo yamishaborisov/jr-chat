@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import cors from "cors";
 
 type Message = {
   "id": number,
@@ -11,6 +12,8 @@ const server = express();
 const PORT = 4000;
 
 const messages:Message[] = [];
+
+server.use(cors());
 
 server.get("/", function(req: Request, res: Response) {
   res.status(200).json("Hello from backend");
