@@ -1,212 +1,197 @@
-/**
- * Требования:
- * - Прозрачная обратная связь — в любой момент времени пользователь
- *   должен понимать что происходит с интерфейсомы
- *   - Можно ли писать текст сообщения?
- *   - Валидно ли сообщение, которое он отправляет и можно ли его отправить?
- *   - После отправки 
- *    - началась ли отправка?
- *    - пришло ли сообщение на сервер? удачно ли?
- *    - [отображение сообщения в списке]
- * 
- * 1. Я нажал на кнопку отправить
- * 2. На сервер ушел POST-запрос
- * 3. Сервер обработал этот запрос
- * 4. Вернул мне ответ
- * 5. Я обработал ответ, понял есть ли ошибка
- * 6. Если нет ошибки — показал это
- * 6.1 Если есть ошибка — показал это
- * 
- * Хорошо бы дать возможность пользователю не отправлять одно и то же сообщение
- * несколько раз
- * 
- * Способы обратной связи 
- * 1. Ничего не делать
- * 2. Все заблокировать
- *   1. Заблокировать поле ввода и кнопку и поменять текст на кнопке
- *   2. Если удачно — разблокировать и вернуть текст обратно, очистить форму и отобразить обновленный список сообщений
- *   3. Если ошибка — разблокировать и вернуть текст обратно, не сбрасывать форму и показать ошибку
- * 3. Optimistic UI
- *   1. Мгновенно обновляет список сообщений и показывает наше сообщение в списке
- *      Очищает форму и дает возможность отправить новое сообщение
- *      Вновь созданному сообщению добавляет визуальный индикатор о его состоянии
- * 
- * 
- * 
- * 
- * Ввод имени пользователя
- * - [x] изначально имя пользователя не задано - null
- * 
- * - [x] если имени пользователя нет — показываем соответствующий экран
- * - [ ] при вводе имя сохраняется в localStorage
- * - [ ] введенное имя отправляется в каждом сообщении
- * 
- * - при рендеринге списка сообщений, если имя пользователя совпадает с 
- *   введенным именем, это сообщение показывается справа
- */
-
-
 {
-  const USERNAME_REC = "username";
+	// {
+	// 	const form = document.getElementById('message-form');
+	// const input = document.getElementById('message-input');
+	// 	const messages = document.getElementById('messages');
 
-  let username = null;
+	// 	form.addEventListener('submit', function (e) {
+	// 		e.preventDefault();
 
-  const chatContainer = document.querySelector(".messages");
-  const usernameContainer = document.querySelector(".username");
+	// 		const text = input.value.trim();
+	// 		if (text === '') return;
+	// 		sendMessage(text);
+	// 		input.value = '';
+	// 		messages.scrollTop = messages.scrollHeight;
+	// 	});
+	// 	input.addEventListener('input', () => {
+	// 		input.style.height = 'auto'; // сброс текущей высоты
+	// 		// messages.style.height = messages.scrollHeight - input.scrollHeight + 'px';
+	// 		input.style.height = input.scrollHeight + 'px';
+	// 	});
+	// input.addEventListener('keydown', function (e) {
+	// 	if (e.key === 'Enter' && !e.shiftKey) {
+	// 		e.preventDefault();
+	// 		const text = input.value.trim();
+	// 		if (text === '') return;
+	// 		initChat();
+	// 		input.value = '';
+	// 		messages.scrollTop = messages.scrollHeight;
+	// 	}
+	// });
 
-  function renderMessages(messages) {
-    chatContainer.innerHTML = "";
+	// 	function sendMessage(text) {
+	// 		const messageContainer = document.createElement('div');
+	// 		const messageElement = document.createElement('div');
+	// 		const messageTime = document.createElement('time');
+	// 		const messageAuthor = document.createElement('div');
+	// 		const messageOptions = document.createElement('div');
+	// 		const messageTop = document.createElement('div');
 
-    for (const message of messages) {
-      const messageElement = document.createElement("article");
-      messageElement.className = "message";
-      messageElement.classList.toggle("message-mine", username === message.username);
+	// const now = new Date();
+	// const hours = now.getHours().toString().padStart(2, '0');
+	// const minutes = now.getMinutes().toString().padStart(2, '0');
+	// const timeString = `${hours}:${minutes}`;
 
-      messageElement.innerHTML = `
-        <div class="message-header">
+	// 		messageContainer.classList.add('message-container');
+	// 		messageElement.classList.add('message');
+	// 		messageTime.classList.add('message-time');
+	// 		messageAuthor.classList.add('message-author');
+	// 		messageOptions.classList.add('message-options');
+	// 		messageTop.classList.add('message-top');
+
+	// 		messageElement.textContent = text;
+
+	// 		// messageOptions.textContent = 'fff';
+
+	// 		messageTime.textContent = timeString;
+	// 		messageAuthor.textContent = 'you';
+
+	// 		input.style.height = 'auto';
+
+	// 		messages.prepend(messageContainer);
+	// 		messageContainer.appendChild(messageElement);
+	// 		messageTop.appendChild(messageAuthor);
+	// 		messageTop.appendChild(messageOptions);
+
+	// 		messageContainer.prepend(messageTop);
+	// 		messageContainer.appendChild(messageTime);
+	// 		// messageContainer.prepend(messageOptions);
+	// 	}
+	// }
+
+	const container = document.querySelector('.messages');
+
+	function renderMessages(messages) {
+		container.innerHTML = '';
+
+		for (const message of messages) {
+			const timeString = new Date(message.timestamp).toLocaleTimeString([], {
+				hour: '2-digit',
+				minute: '2-digit',
+			});
+			const messageElement = document.createElement('article');
+			messageElement.className = 'message-container';
+			messageElement.innerHTML = `
+        <div class="message-top">
           <div class="message-author">${message.username}</div>
-          <button class="message-control"></button>
+          <button class="message-options"></button>
         </div>
-        <p class="message-text">${message.text}</p>
-        <time class="message-time">${message.timestamp}</time>
+        <p class="message">${message.text}</p>
+        <time class="message-time">${timeString}</time>
       `;
 
-      chatContainer.appendChild(messageElement);
-    }
-  }
+			container.prepend(messageElement);
+		}
+	}
 
-  function getMessages(cb) {
-    fetch("http://localhost:4000/messages", {
-      method: "GET",
-    })
-      .then(function (messagesResponse) {
-        if (messagesResponse.status !== 200) {
-          throw new Error("Couldn't get messages from server");
-        }
+	function getMessages() {
+		fetch('http://localhost:4000/messages', {
+			method: 'GET',
+		})
+			.then(function (messagesResponse) {
+				if (messagesResponse.status !== 200) {
+					throw new Error("Couldn't get messages from server");
+				}
 
-        return messagesResponse.json();
-      })
-      .then(function (messagesList) {
-        renderMessages(messagesList);
+				return messagesResponse.json();
+			})
+			.then(function (messagesList) {
+				console.log(messagesList);
+				renderMessages(messagesList);
+			});
+	}
 
-        if (typeof cb === "function") {
-          cb();
-        }
-      });
-  }
+	function initForm() {
+		const formContainer = document.querySelector('form');
 
-  function scrollToBottom() {
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-  }
+		const formTextField = formContainer.querySelector('textarea');
+		const formSubmitButton = formContainer.querySelector('button');
 
-  function initForm() {
-    const formContainer = document.querySelector("#message-form");
+		formContainer.onsubmit = function (evt) {
+			evt.preventDefault();
+			const formData = new FormData(evt.target);
 
-    const formTextField = formContainer.querySelector("textarea");
-    const formSubmitButton = formContainer.querySelector("button");
+			const messageData = {
+				username: formData.get('username'),
+				text: formData.get('text'),
+			};
 
-    const usernameField = formContainer.querySelector("input[name=username]");
-    usernameField.value = username;
+			formTextField.disabled = true;
+			formSubmitButton.disabled = true;
+			formSubmitButton.textContent = 'Сообщение отправляется...';
 
-    formContainer.onsubmit = function(evt) {
-      evt.preventDefault();
+			fetch('http://localhost:4000/messages', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(messageData),
+			}).then(function (newMessageResponse) {
+				console.log(newMessageResponse.status);
 
-      const formData = new FormData(evt.target);
+				if (newMessageResponse.status !== 200) {
+					//
+				}
 
-      const messageData = {
-        username: formData.get("username"),
-        text: formData.get("text"),
-      };
+				formTextField.disabled = false;
+				formTextField.value = '';
+				formSubmitButton.disabled = false;
+				formSubmitButton.textContent = 'Отправить';
 
-      formTextField.disabled = true;
-      formSubmitButton.disabled = true;
-      formSubmitButton.textContent = "Сообщение отправляется...";
+				getMessages();
+			});
+		};
+	}
 
-      fetch("http://localhost:4000/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(messageData),
-      })
-        .then(function(newMessageResponse) {
-          if (newMessageResponse.status !== 200) {
-            //
-          }
+	function initChat() {
+		getMessages();
+		initForm();
+	}
 
-          formTextField.disabled = false;
-          formTextField.value = "";
-          formSubmitButton.disabled = false;
-          formSubmitButton.textContent = "Отправить";
+	initChat();
 
-          getMessages(scrollToBottom);
-        });
-    }
-  }
+	function renderMessages(messages) {
+		for (const message of messages) {
+			const messageElement = document.createElement('article');
+			messageElement.className = 'message';
 
-  function initChat() {
-    // HTTP
-    // Request --> Response
-    // Polling
+			messageElement.innerHTML = `
+        <div class="message-author">${message.username}</div>
+        <button class="message-control"></button>
+        <p class="message-text">${message.text}</p>
+        <time>${message.timestamp}</time>
+      `;
 
-    // Websocket
-    // Message <--> Message
-    getMessages();
-    setInterval(getMessages, 3000);
-    initForm();
+			container.appendChild(messageElement);
+		}
+	}
 
-    // Как правильно скроллить?
-    // - Когда мы сами отправили [новое сообщение]
-    // - Когда мы находимся внизу списка и пришло [новое сообщение]
-    // - Когда мы только загрузили страницу
+	function initChat() {
+		fetch('http://localhost:4000/messages', {
+			method: 'GET',
+		})
+			.then(function (messagesResponse) {
+				if (messagesResponse.status !== 200) {
+					throw new Error("Couldn't get messages from server");
+				}
 
-    // | | | | | | | | | |
-    //        | ||  ||| |
-  }
+				return messagesResponse.json();
+			})
+			.then(function (messagesList) {
+				console.log(messagesList);
+				renderMessages(messagesList);
+			});
+	}
 
-  // Форма может жить в двух состояниях — модальное окно показано и модальное окно
-  // не показано
-  // Режим когда окно не показано может быть инициализирован после того как 
-  // имя пользователя было введено
-  // При создании функционала некоего модуля, который описывает работу
-  // с DOM, нужно описывать не только инициализацию, но и "разрушение"
-  // этого модуля
-  function initUsernameForm() {
-    const usernameForm = usernameContainer.querySelector("form");
-
-    usernameForm.onsubmit = function(evt) {
-      evt.preventDefault();
-
-      const formElement = evt.target;
-      const formData = new FormData(formElement);
-      const enteredUsername = formData.get("username");
-
-      localStorage.setItem(USERNAME_REC, enteredUsername);
-
-      usernameContainer.close();
-      usernameForm.onsubmit = null;
-
-      initApp();
-    };
-
-    usernameContainer.showModal();
-  }
-
-  // Модальное приложение
-  // Модальность — зависимость от состояния
-  // В нашем случае режим переключается наличием username
-  // - есть username — режим чата
-  // - нет username — режим ввода username
-  function initApp() {
-    username = localStorage.getItem(USERNAME_REC);
-
-    if (username === null) {
-      initUsernameForm();
-      return;
-    }
-
-    initChat();
-  }
-
-  initApp();
+	initChat();
 }
