@@ -1,74 +1,17 @@
 {
-	// {
-	// 	const form = document.getElementById('message-form');
-	// const input = document.getElementById('message-input');
-	// 	const messages = document.getElementById('messages');
+	const USERNAME_REC = 'username';
+	const usernameContainer = document.querySelector('.username');
+	let user = usernameContainer.querySelector('.username-input');
+	const logOut = document.querySelector('.logout-button');
 
-	// 	form.addEventListener('submit', function (e) {
-	// 		e.preventDefault();
+	logOut.onclick = function (e) {
+		e.preventDefault();
+		user.value = '';
+		localStorage.clear();
+		initApp();
+	};
 
-	// 		const text = input.value.trim();
-	// 		if (text === '') return;
-	// 		sendMessage(text);
-	// 		input.value = '';
-	// 		messages.scrollTop = messages.scrollHeight;
-	// 	});
-	// 	input.addEventListener('input', () => {
-	// 		input.style.height = 'auto'; // сброс текущей высоты
-	// 		// messages.style.height = messages.scrollHeight - input.scrollHeight + 'px';
-	// 		input.style.height = input.scrollHeight + 'px';
-	// 	});
-	// input.addEventListener('keydown', function (e) {
-	// 	if (e.key === 'Enter' && !e.shiftKey) {
-	// 		e.preventDefault();
-	// 		const text = input.value.trim();
-	// 		if (text === '') return;
-	// 		initChat();
-	// 		input.value = '';
-	// 		messages.scrollTop = messages.scrollHeight;
-	// 	}
-	// });
-
-	// 	function sendMessage(text) {
-	// 		const messageContainer = document.createElement('div');
-	// 		const messageElement = document.createElement('div');
-	// 		const messageTime = document.createElement('time');
-	// 		const messageAuthor = document.createElement('div');
-	// 		const messageOptions = document.createElement('div');
-	// 		const messageTop = document.createElement('div');
-
-	// const now = new Date();
-	// const hours = now.getHours().toString().padStart(2, '0');
-	// const minutes = now.getMinutes().toString().padStart(2, '0');
-	// const timeString = `${hours}:${minutes}`;
-
-	// 		messageContainer.classList.add('message-container');
-	// 		messageElement.classList.add('message');
-	// 		messageTime.classList.add('message-time');
-	// 		messageAuthor.classList.add('message-author');
-	// 		messageOptions.classList.add('message-options');
-	// 		messageTop.classList.add('message-top');
-
-	// 		messageElement.textContent = text;
-
-	// 		// messageOptions.textContent = 'fff';
-
-	// 		messageTime.textContent = timeString;
-	// 		messageAuthor.textContent = 'you';
-
-	// 		input.style.height = 'auto';
-
-	// 		messages.prepend(messageContainer);
-	// 		messageContainer.appendChild(messageElement);
-	// 		messageTop.appendChild(messageAuthor);
-	// 		messageTop.appendChild(messageOptions);
-
-	// 		messageContainer.prepend(messageTop);
-	// 		messageContainer.appendChild(messageTime);
-	// 		// messageContainer.prepend(messageOptions);
-	// 	}
-	// }
-
+	let username = null;
 	const container = document.querySelector('.messages');
 
 	function renderMessages(messages) {
@@ -80,7 +23,12 @@
 				minute: '2-digit',
 			});
 			const messageElement = document.createElement('article');
+
 			messageElement.className = 'message-container';
+			messageElement.classList.toggle(
+				'message-mine',
+				username !== message.username
+			);
 			messageElement.innerHTML = `
         <div class="message-top">
           <div class="message-author">${message.username}</div>
@@ -94,7 +42,7 @@
 		}
 	}
 
-	function getMessages() {
+	function getMessages(cb) {
 		fetch('http://localhost:4000/messages', {
 			method: 'GET',
 		})
@@ -106,16 +54,25 @@
 				return messagesResponse.json();
 			})
 			.then(function (messagesList) {
-				console.log(messagesList);
 				renderMessages(messagesList);
+
+				if (typeof cb === 'function') {
+					cb();
+				}
 			});
 	}
 
-	function initForm() {
-		const formContainer = document.querySelector('form');
+	function scrollToBottom() {
+		container.scrollTop = container.scrollHeight;
+	}
 
+	function initForm() {
+		const formContainer = document.querySelector('#message-form');
+		const usernameField = formContainer.querySelector('input[name=username]');
 		const formTextField = formContainer.querySelector('textarea');
 		const formSubmitButton = formContainer.querySelector('button');
+		const originalIMGbutton = formSubmitButton.innerHTML;
+		usernameField.value = username;
 
 		formContainer.onsubmit = function (evt) {
 			evt.preventDefault();
@@ -129,7 +86,6 @@
 			formTextField.disabled = true;
 			formSubmitButton.disabled = true;
 			formSubmitButton.textContent = 'Сообщение отправляется...';
-
 			fetch('http://localhost:4000/messages', {
 				method: 'POST',
 				headers: {
@@ -140,23 +96,54 @@
 				console.log(newMessageResponse.status);
 
 				if (newMessageResponse.status !== 200) {
-					//
+					console.log('smth not okay');
 				}
 
 				formTextField.disabled = false;
 				formTextField.value = '';
 				formSubmitButton.disabled = false;
-				formSubmitButton.textContent = 'Отправить';
+				formSubmitButton.innerHTML = originalIMGbutton;
 
-				getMessages();
+				getMessages(scrollToBottom);
 			});
 		};
 	}
 
 	function initChat() {
 		getMessages();
+		setInterval(getMessages, 3000);
 		initForm();
 	}
 
-	initChat();
+	function initUsernameForm() {
+		const usernameForm = usernameContainer.querySelector('form');
+		console.log('aaaaaa');
+		usernameForm.onsubmit = function (evt) {
+			evt.preventDefault();
+
+			const formElement = evt.target;
+			const formData = new FormData(formElement);
+			const enteredUsername = formData.get('username');
+
+			localStorage.setItem(USERNAME_REC, enteredUsername);
+			usernameContainer.close();
+			usernameForm.onsubmit = null;
+
+			initApp();
+		};
+		usernameContainer.showModal();
+	}
+
+	function initApp() {
+		username = localStorage.getItem(USERNAME_REC);
+
+		if (username === null) {
+			initUsernameForm();
+			return;
+		}
+
+		initChat();
+	}
+
+	initApp();
 }
