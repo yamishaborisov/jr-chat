@@ -20,12 +20,35 @@
 			</div>
 
 			<div class="menu-container">
-				<img src="./imajes/Vector.svg" alt="menu-button" />
+				<a class="logout-button" href="#">Log out</a>
 			</div>
 		</header>
+		<dialog class="username">
+			<div class="join-header-cont">
+				<img class="logo-icon" src="./imajes/Logo-start.svg" alt="start" />
+				<h1 class="join-header">Online Chat</h1>
+			</div>
+
+			<form method="dialog">
+				<fieldset>
+					<label>Username</label>
+					<input
+						class="username-input"
+						required
+						type="text"
+						name="username"
+						placeholder="username"
+						autocapitalize="off"
+						autocomplete="off"
+					/>
+				</fieldset>
+				<button class="join" type="submit">Join</button>
+			</form>
+		</dialog>
+
 		<main class="main-cont">
 			<div id="messages" class="messages"></div>
-			<form id="message-form" method="POST" action="/">
+			<form id="message-form">
 				<input type="hidden" name="username" value="guest001" />
 				<textarea
 					rows="1"
@@ -34,7 +57,7 @@
 					name="text"
 				></textarea>
 
-				<button class="send-button" type="submit">
+				<button class="send-button">
 					<img src="./imajes/Send.svg" alt="send" />
 				</button>
 			</form>
